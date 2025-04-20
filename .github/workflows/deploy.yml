@@ -85,7 +85,7 @@ jobs:
           echo "Setting secret $SECRET_NAME"
 
           gh secret set "$SECRET_NAME" \
-            --repo salob/bp-deploy \
+            --repo sianob/bp-deploy \
             --body "$(terraform output -raw kubeconfig)"
         if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
 
