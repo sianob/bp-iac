@@ -75,15 +75,14 @@ jobs:
 
           gh secret set "$SECRET_NAME" \
             --repo salob/bp-deploy \
-            --body "$(cat .kubeconfig"
+            --body "$(cat kubeconfig)"
         if: github.event.inputs.action == 'create'
 
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
-          echo "Setting secret $SECRET_NAME"
-
+          echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME"
         if: github.event.inputs.action == 'destroy'
        

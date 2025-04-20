@@ -1,0 +1,36 @@
+name: Terraform Smoke Test
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  workflow_call: {}
+
+jobs:
+  smoketest:
+    name: smoketest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        env_dir: [aks-staging, aks-prod]
+
+    defaults:
+      run:
+        working-directory: BP-IAC/${{ matrix.env_dir }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.4
+
+      - name: Terraform Init (${{ matrix.env_dir }})
+        run: terraform init
+
+      - name: Terraform Validate (${{ matrix.env_dir }})
+        run: terraform validate
