@@ -1,4 +1,4 @@
-name: Terraform Smoke Test
+name: Terraform SmokeTest
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: BP-IAC/${{ matrix.env_dir }}
+        working-directory: ${{ matrix.env_dir }}
 
     steps:
       - name: Checkout Repo
