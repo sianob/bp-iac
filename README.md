@@ -148,6 +148,15 @@ kubectl config get-contexts
 
 A GitHub Actions workflow is defined in `.github/workflows/deploy.yml` to apply infrastructure changes to **staging** or **production** environments using a manual trigger.
 
+Secrets were created for authenticating to Azure using the GitHub CLI. A GitHub token must be created and then exported `export GH_TOKEN=<your-github-token>`
+
+```
+gh secret set ARM_CLIENT_ID --body "$ARM_CLIENT_ID"
+gh secret set ARM_CLIENT_SECRET --body "$ARM_CLIENT_SECRET"
+gh secret set ARM_TENANT_ID --body "$ARM_TENANT_ID"
+gh secret set ARM_SUBSCRIPTION_ID --body "$ARM_SUBSCRIPTION_ID"
+```
+
 The workflow:
 - Uses a service principal for authentication
 - Initializes and applies Terraform
