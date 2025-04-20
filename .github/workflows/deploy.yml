@@ -123,10 +123,12 @@ jobs:
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file="terraform.tfvars"
 
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
+        
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME"
-        if: github.event.inputs.action == 'destroy'
