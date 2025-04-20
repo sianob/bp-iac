@@ -2,6 +2,8 @@
 
 This repository contains the Terraform code and GitHub Actions workflows to manage Azure Kubernetes Service (AKS) clusters for both **staging** and **production** environments.
 
+In order to contribute you must submit a pull request. This pull request requires at lease one review and for the smoketest status check to pass.
+
 ---
 
 ## 📁 Folder Structure
