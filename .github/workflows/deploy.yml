@@ -22,7 +22,13 @@ on:
 jobs:
   smoketest:
     uses: ./.github/workflows/smoketest.yml
+    secrets:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   deploy:
+    needs: smoketest
     if: github.ref == 'refs/heads/main'
     name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
