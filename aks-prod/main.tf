@@ -23,7 +23,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
       max_surge                     = "10%"
       drain_timeout_in_minutes      = 0
       node_soak_duration_in_minutes = 0
-    }
+    }    
   }
 
   identity {
@@ -34,7 +34,16 @@ resource "azurerm_kubernetes_cluster" "aks" {
     load_balancer_sku = "standard"
     network_plugin    = "kubenet" 
   }
-    tags = {
+  tags = {
     Environment = var.aks_environment
   }
+}
+
+resource "helm_release" "nginx_ingress" {
+  name       = "ingress-nginx"
+  chart      = "ingress-nginx"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  namespace  = "ingress-nginx"
+  version    = "4.9.1"
+  create_namespace = true
 }
