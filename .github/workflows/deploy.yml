@@ -1,5 +1,5 @@
 name: Terraform Deploy
-
+description: Provision an Azure Kubernetes Service using Terraform
 on:
   workflow_dispatch:
     inputs:
@@ -11,6 +11,14 @@ on:
         options:
           - staging
           - prod
+      action:
+        description: "Action to perform"
+        required: true
+        default: "create"
+        type: choice
+        options:
+          - create
+          - destroy
 
 env:
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -20,6 +28,7 @@ env:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
@@ -48,4 +57,33 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
-        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        if: github.event.inputs.action == 'create'
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
+        if: github.event.inputs.action == 'destroy'
+
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
+        if: github.event.inputs.action == 'create'        
+
+      - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
+        run: |
+          ENV_NAME=${{ github.event.inputs.environment }}
+          SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
+          echo "Setting secret $SECRET_NAME"
+
+          gh secret set "$SECRET_NAME" \
+            --repo salob/bp-deploy \
+            --body "$(cat .kubeconfig"
+        if: github.event.inputs.action == 'create'
+
+      - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
+        run: |
+          ENV_NAME=${{ github.event.inputs.environment }}
+          SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
+          echo "Setting secret $SECRET_NAME"
+
+          gh secret delete "$SECRET_NAME"
+        if: github.event.inputs.action == 'destroy'
+       
