@@ -18,7 +18,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
     zones  = [1, 2, 3]
     auto_scaling_enabled = true
     min_count           = 1
-    max_count           = 3   
+    max_count           = 3
+    upgrade_settings {
+      max_surge                     = "10%"
+      drain_timeout_in_minutes      = 0
+      node_soak_duration_in_minutes = 0
+    }    
   }
 
   identity {
