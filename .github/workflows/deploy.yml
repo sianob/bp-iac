@@ -27,9 +27,9 @@ jobs:
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
-  deploy:
-    name: Deploy ${{ github.event.inputs.environment }} Environment
-    if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'create'
+  iac:
+    name: ${{ github.event.inputs.action }} ${{ github.event.inputs.environment }} environment
+    if: github.ref == 'refs/heads/main'
     needs: smoketest
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
@@ -58,27 +58,37 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Create Plan
+        if: github.event.inputs.action == 'create'
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan > plan.out
+      
+      - name: Terraform Destroy Plan
+        if: github.event.inputs.action == 'destroy'
+        run: terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan > plan.out
 
       - name: Check for Changes
         id: changes
         run: |
-          if grep -q "Your infrastructure matches the configuration" plan.out; then
+          if grep -q "Your infrastructure matches the configuration" plan.out || grep -q "No objects need to be destroyed"; then
             echo "no_changes=true" >> $GITHUB_OUTPUT
           else
             echo "no_changes=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Terraform Apply
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
-        if: steps.changes.outputs.no_changes == 'false'
+
+      - name: Terraform Destroy
+        if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
+        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
 
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
-        if: steps.changes.outputs.no_changes == 'false'     
+        if: steps.changes.outputs.no_changes == 'false'
 
       - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
@@ -87,49 +97,12 @@ jobs:
           gh secret set "$SECRET_NAME" \
             --repo sianob/bp-deploy \
             --body "$(terraform output -raw kubeconfig)"
-        if: steps.changes.outputs.no_changes == 'false'
-       
-  destroy:
-    name: Delete ${{ github.event.inputs.environment }} Environment
-    needs: smoketest
-    if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'destroy'
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    env:
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-
-    defaults:
-      run:
-        working-directory: aks-${{ github.event.inputs.environment }}
-
-    steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.11.4
-
-      - name: Terraform Init
-        run: terraform init
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
-
-      - name: Authenticate GitHub CLI
-        run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
         
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
+        if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME" \
-          --repo sianob/bp-deploy
+          --repo sianob/bp-deploy 
