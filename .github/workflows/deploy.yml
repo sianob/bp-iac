@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Terraform Managed AKS
 description: Provision an Azure Kubernetes Service using Terraform
 on:
   workflow_dispatch:
@@ -29,7 +29,7 @@ jobs:
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   deploy:
     needs: smoketest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'create'
     name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
@@ -60,7 +60,6 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan > plan.out
-        if: github.event.inputs.action == 'create'
 
       - name: Check for Changes
         id: changes
@@ -70,19 +69,14 @@ jobs:
           else
             echo "no_changes=false" >> $GITHUB_OUTPUT
           fi
-        if: github.event.inputs.action == 'create'
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
-        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
-
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
-        if: github.event.inputs.action == 'destroy'
+        if: steps.changes.outputs.no_changes == 'false'
 
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
-        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'     
+        if: steps.changes.outputs.no_changes == 'false'     
 
       - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
         run: |
@@ -93,13 +87,48 @@ jobs:
           gh secret set "$SECRET_NAME" \
             --repo sianob/bp-deploy \
             --body "$(terraform output -raw kubeconfig)"
-        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
+        if: steps.changes.outputs.no_changes == 'false'
+       
+  destroy:
+    needs: smoketest
+    if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'destroy'
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
+    defaults:
+      run:
+        working-directory: aks-${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.4
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
+
+      - name: Authenticate GitHub CLI
+        run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
+        
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME"
-        if: github.event.inputs.action == 'destroy'
-       
