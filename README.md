@@ -134,10 +134,10 @@ Safely tears down all infrastructure managed by Terraform in the current environ
 
 ## 🛠 Set up `kubectl` Config After Deployment
 
-Once your AKS cluster is deployed, use the generated `kubeconfig` to interact with your cluster:
+Once your AKS cluster is deployed, use the `kubeconfig` output to interact with your cluster:
 
 ```bash
-mv kubeconfig ~/.kube/aks-config
+terraform output -raw kubeconfig >~/.kube/aks-config 
 export KUBECONFIG=~/.kube/aks-config
 kubectl config get-contexts
 ```

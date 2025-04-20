@@ -51,7 +51,10 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
-  
+
+      - name: Create dummy kubeconfig file
+        run: touch kubeconfig
+
       - name: Terraform Plan
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan > plan.out
         if: github.event.inputs.action == 'create'
@@ -59,7 +62,7 @@ jobs:
       - name: Check for Changes
         id: changes
         run: |
-          if grep -q "No changes. Infrastructure is up-to-date." plan.out; then
+          if grep -q "Your infrastructure matches the configuration" plan.out; then
             echo "no_changes=true" >> $GITHUB_OUTPUT
           else
             echo "no_changes=false" >> $GITHUB_OUTPUT
@@ -85,8 +88,8 @@ jobs:
           echo "Setting secret $SECRET_NAME"
 
           gh secret set "$SECRET_NAME" \
-            --org salob \
-            --body "$(cat kubeconfig)"
+            --repo salob/bp-deploy \
+            --body "$(terraform output -raw kubeconfig)"
         if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
 
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
