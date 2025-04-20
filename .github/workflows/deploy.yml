@@ -47,9 +47,10 @@ jobs:
           terraform_version: 1.11.4
 
       - name: Set up Azure CLI
-        uses: azure/setup-cli@v1
+        uses: azure/setup-cli@v2
         with:
-          version: latest
+          azcliversion: latest
+
       - name: Terraform Init
         run: terraform init
 
