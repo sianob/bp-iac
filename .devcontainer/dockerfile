@@ -1,0 +1,27 @@
+# Start from a base Dev Container image with Docker support
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    apt-transport-https \
+    gnupg \
+    lsb-release \
+    docker.io \
+    iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    chmod +x kubectl && \
+    mv kubectl /usr/local/bin/
+
+# Install Kind
+RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64 && \
+    chmod +x ./kind && \
+    mv ./kind /usr/local/bin/kind
+
+# Optional: Clean up
+RUN apt-get clean
+

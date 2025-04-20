@@ -1,0 +1,34 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+
+# Terraform variable files
+*.tfvars
+*.tfvars.json
+
+# Terraform plan files
+*.tfplan
+
+# Terraform provider plugins
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive environment variable files
+.env
+.env.*
+
+# IDE-specific files (optional, depending on your IDE)
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+
+# Logs and temporary files
+*.log
+*.bak
+*.tmp
+*.secret
