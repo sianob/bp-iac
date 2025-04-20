@@ -23,9 +23,13 @@ In order to contribute you must submit a pull request. This pull request require
 │       ├── providers.tf
 │       ├── variables.tf
 │       └── terraform.tfvars
+└── scripts/
+    └── workflows/
+        └── create_tf_state_storage.sh
 └── .github/
     └── workflows/
         └── deploy.yml
+        └── smoketest.yml       
 ```
 
 ---
