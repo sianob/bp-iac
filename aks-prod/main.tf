@@ -46,7 +46,4 @@ resource "helm_release" "nginx_ingress" {
   namespace  = "ingress-nginx"
   version    = "4.9.1"
   create_namespace = true
-  tags = {
-    Environment = var.aks_environment
-  }
 }

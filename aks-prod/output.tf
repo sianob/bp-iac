@@ -19,6 +19,15 @@ output "kubeconfig" {
 # Might not be available immediately
 # run 'terraform output ingress_nginx_public_ip'
 
+data "kubernetes_service" "ingress_nginx" {
+  metadata {
+    name      = "ingress-nginx-controller"
+    namespace = "ingress-nginx"
+  }
+
+  depends_on = [helm_release.nginx_ingress]
+}
+
 output "ingress_nginx_public_ip" {
   value       = data.kubernetes_service.ingress_nginx.status[0].load_balancer[0].ingress[0].ip
   description = "Public IP address of the Ingress NGINX load balancer"
