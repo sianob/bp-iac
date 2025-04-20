@@ -28,9 +28,9 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   deploy:
-    needs: smoketest
+    name: Deploy ${{ github.event.inputs.environment }} Environment
     if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'create'
-    name: Deploy to ${{ github.event.inputs.environment }}
+    needs: smoketest
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
@@ -90,9 +90,9 @@ jobs:
         if: steps.changes.outputs.no_changes == 'false'
        
   destroy:
+    name: Delete ${{ github.event.inputs.environment }} Environment
     needs: smoketest
     if: github.ref == 'refs/heads/main' && github.event.inputs.action == 'destroy'
-    name: Deploy to ${{ github.event.inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     env:
@@ -131,4 +131,5 @@ jobs:
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
-          gh secret delete "$SECRET_NAME"
+          gh secret delete "$SECRET_NAME" \
+          --repo sianob/bp-deploy
