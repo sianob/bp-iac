@@ -19,6 +19,7 @@ crash.log
 # Sensitive environment variable files
 .env
 .env.*
+kubeconfig
 
 # IDE-specific files (optional, depending on your IDE)
 .vscode/
