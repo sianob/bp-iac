@@ -46,4 +46,5 @@ resource "helm_release" "nginx_ingress" {
   namespace  = "ingress-nginx"
   version    = "4.9.1"
   create_namespace = true
+  depends_on = [azurerm_kubernetes_cluster.aks]
 }
