@@ -1,4 +1,4 @@
-name: Terraform Smoke Test
+name: Terraform SmokeTest
 
 on:
   pull_request:
@@ -6,6 +6,12 @@ on:
       - main
 
   workflow_call: {}
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
 jobs:
   smoketest:
@@ -18,7 +24,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: BP-IAC/${{ matrix.env_dir }}
+        working-directory: ${{ matrix.env_dir }}
 
     steps:
       - name: Checkout Repo

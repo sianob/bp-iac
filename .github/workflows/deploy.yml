@@ -27,6 +27,8 @@ env:
   ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
 jobs:
+  smoketest:
+    uses: ./.github/workflows/smoketest.yml
   deploy:
     if: github.ref == 'refs/heads/main'
     name: Deploy to ${{ github.event.inputs.environment }}
