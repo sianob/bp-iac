@@ -46,18 +46,44 @@ jobs:
         with:
           terraform_version: 1.11.4
 
+      - name: Set up Azure CLI
+        uses: azure/setup-cli@v1
+        with:
+          version: latest
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Fetch kubeconfig
+        run: |
+          az aks get-credentials --resource-group ${{ secrets.AKS_RESOURCE_GROUP }} --name ${{ secrets.AKS_NAME }} --overwrite-existing
+          echo "Kubeconfig fetched successfully"
+        if: github.event.inputs.action == 'create'
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          AZURE_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          AZURE_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform.tfvars"
+        run: terraform plan -var-file="terraform.tfvars" -out=tfplan > plan.out
+        if: github.event.inputs.action == 'create'
+
+      - name: Check for Changes
+        id: changes
+        run: |
+          if grep -q "No changes. Infrastructure is up-to-date." plan.out; then
+            echo "no_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "no_changes=false" >> $GITHUB_OUTPUT
+          fi
+        if: github.event.inputs.action == 'create'
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
-        if: github.event.inputs.action == 'create'
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file="terraform.tfvars"
@@ -65,7 +91,7 @@ jobs:
 
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
-        if: github.event.inputs.action == 'create'        
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'     
 
       - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
         run: |
@@ -76,7 +102,7 @@ jobs:
           gh secret set "$SECRET_NAME" \
             --repo salob/bp-deploy \
             --body "$(cat kubeconfig)"
-        if: github.event.inputs.action == 'create'
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
 
       - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
         run: |
