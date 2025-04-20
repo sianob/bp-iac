@@ -38,12 +38,3 @@ resource "azurerm_kubernetes_cluster" "aks" {
     Environment = var.aks_environment
   }
 }
-
-resource "helm_release" "nginx_ingress" {
-  name       = "ingress-nginx"
-  chart      = "ingress-nginx"
-  repository = "https://kubernetes.github.io/ingress-nginx"
-  namespace  = "ingress-nginx"
-  version    = "4.9.1"
-  create_namespace = true
-}
