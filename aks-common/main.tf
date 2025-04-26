@@ -10,3 +10,10 @@ resource "azurerm_log_analytics_workspace" "workspace" {
   sku                 = "PerGB2018"
   retention_in_days   = 30
 }
+
+# Create a DNS Zone
+resource "azurerm_dns_zone" "bp_zone" {
+  name                = "bp-calculator.com"
+  resource_group_name = var.resource_group_name
+}
+
