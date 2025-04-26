@@ -82,14 +82,13 @@ jobs:
         if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
         run: |
           terraform apply -auto-approve -var-file="terraform.tfvars"
-          terraform output -raw kubeconfig >$PWD/aks-config
 
       - name: Install or upgrade Ingress NGINX via Helm
         if: github.event.inputs.action == 'create'
-        env:
-          KUBECONFIG: $PWD/aks-config
         run: |
+          terraform output -raw kubeconfig >./aks-config
           cat ./aks-config
+          export KUBECONFIG=./aks-config
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
             --namespace ingress-nginx --create-namespace
