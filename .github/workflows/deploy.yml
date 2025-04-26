@@ -102,7 +102,7 @@ jobs:
         if: steps.changes.outputs.no_changes == 'false'
 
       - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
-        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
+        if: github.event.inputs.action == 'create'
         run: |
           ENV_NAME=${{ github.event.inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
