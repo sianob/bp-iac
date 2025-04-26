@@ -43,7 +43,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     network_plugin    = "kubenet" 
   }
   oms_agent {
-    log_analytics_workspace_id = azurerm_log_analytics_workspace.workspace.id
+    log_analytics_workspace_id = var.log_analytics_workspace_id
   }  
   tags = {
     Environment = var.aks_environment

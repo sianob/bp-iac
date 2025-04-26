@@ -22,3 +22,7 @@ variable "system_node_count" {
   type        = number
   description = "Number of AKS worker nodes"
 }
+variable "log_analytics_workspace_id" {
+  type        = string
+  description = "Workspace ID for log analytics used in Azure Monitoring"
+}
