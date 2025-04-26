@@ -47,6 +47,9 @@ jobs:
       - name: Checkout Repo
         uses: actions/checkout@v4
 
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -79,6 +82,20 @@ jobs:
         if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
         run: terraform apply -auto-approve -var-file="terraform.tfvars"
 
+      - name: Write Kubeconfig to File
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
+        run: |
+          echo "$(terraform output -raw kubeconfig)" > kubeconfig
+
+      - name: Install or upgrade Ingress NGINX via Helm
+        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
+        env:
+          KUBECONFIG: $PWD/kubeconfig
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx --create-namespace
+
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
         run: terraform destroy -auto-approve -var-file="terraform.tfvars"
@@ -105,4 +122,4 @@ jobs:
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME" \
-          --repo sianob/bp-deploy 
+          --repo sianob/bp-deploy
