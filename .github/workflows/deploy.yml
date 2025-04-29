@@ -19,6 +19,15 @@ on:
         options:
           - create
           - destroy
+
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+      action:
+        required: false
+        type: string
 jobs:
   smoketest:
     uses: ./.github/workflows/smoketest.yml
