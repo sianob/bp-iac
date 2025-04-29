@@ -91,8 +91,10 @@ jobs:
           export KUBECONFIG=./aks-config
           helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
           helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
-            --set controller.config.health-check-path=/healthz \
-            --namespace ingress-nginx --create-namespace
+          --create-namespace \
+          --namespace ingress-nginx \
+          --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
+          --set controller.service.externalTrafficPolicy=Local
 
       - name: Terraform Destroy
         if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
