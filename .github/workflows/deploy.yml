@@ -28,6 +28,18 @@ on:
       action:
         required: false
         type: string
+    secrets:
+      ARM_CLIENT_ID:
+        required: true
+      ARM_CLIENT_SECRET:
+        required: true
+      ARM_TENANT_ID:
+        required: true
+      ARM_SUBSCRIPTION_ID:
+        required: true
+      GH_PAT:
+        required: true
+        description: "GitHub Personal Access Token with repo scope"
 jobs:
   smoketest:
     uses: ./.github/workflows/smoketest.yml
@@ -55,6 +67,10 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
+        with:
+          repository: sianob/bp-iac
+          ref: ${{ github.head_ref || github.ref_name }}
+          token: ${{ secrets.GH_PAT }} # Needed to access private repos
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
