@@ -3,7 +3,7 @@ description: Provision an Azure Kubernetes Service using Terraform
 on:
   workflow_dispatch:
     inputs:
-      environment:
+      cluster:
         description: "Target environment"
         required: true
         default: "staging"
@@ -50,11 +50,11 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   iac:
-    name: ${{ github.event.inputs.action }} ${{ github.event.inputs.environment }} environment
+    name: ${{ github.event.inputs.action }} ${{ github.event.inputs.cluster }} environment
     if: github.ref == 'refs/heads/main'
     needs: smoketest
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    environment: ${{ github.event.inputs.cluster }}
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -63,7 +63,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: aks-${{ github.event.inputs.environment }}
+        working-directory: aks-${{ github.event.inputs.cluster }}
 
     steps:
       - name: Checkout Repo
@@ -129,20 +129,20 @@ jobs:
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
 
-      - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.environment }}
+      - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.cluster }}
         if: github.event.inputs.action == 'create'
         run: |
-          ENV_NAME=${{ github.event.inputs.environment }}
+          ENV_NAME=${{ github.event.inputs.cluster }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Setting secret $SECRET_NAME"
           gh secret set "$SECRET_NAME" \
             --repo sianob/bp-deploy \
             --body "$(terraform output -raw kubeconfig)"
         
-      - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.environment }}
+      - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.cluster }}
         if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
         run: |
-          ENV_NAME=${{ github.event.inputs.environment }}
+          ENV_NAME=${{ github.event.inputs.cluster }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME" \
