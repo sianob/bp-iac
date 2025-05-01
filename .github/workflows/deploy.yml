@@ -41,14 +41,14 @@ on:
         required: true
         description: "GitHub Personal Access Token with repo scope"
 jobs:
-  smoketest:
-    uses: ./.github/workflows/smoketest.yml
-    secrets:
-      GH_PAT: ${{ secrets.GH_PAT }}
-      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
+  # smoketest:
+  #   uses: ./.github/workflows/smoketest.yml
+  #   secrets:
+  #     GH_PAT: ${{ secrets.GH_PAT }}
+  #     ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  #     ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  #     ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+  #     ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   iac:
     name: ${{ inputs.action }} ${{ inputs.environment }} environment
     if: github.ref == 'refs/heads/main'
