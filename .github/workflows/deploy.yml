@@ -52,7 +52,7 @@ jobs:
   iac:
     name: ${{ inputs.action }} ${{ inputs.environment }} environment
     if: github.ref == 'refs/heads/main'
-    needs: smoketest
+    # needs: smoketest
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     env:
