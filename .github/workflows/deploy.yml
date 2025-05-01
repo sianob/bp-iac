@@ -3,7 +3,7 @@ description: Provision an Azure Kubernetes Service using Terraform
 on:
   workflow_dispatch:
     inputs:
-      cluster:
+      environment:
         description: "Target environment"
         required: true
         default: "staging"
@@ -50,11 +50,11 @@ jobs:
       ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}    
   iac:
-    name: ${{ github.event.inputs.action }} ${{ github.event.inputs.cluster }} environment
+    name: ${{ inputs.action }} ${{ inputs.environment }} environment
     if: github.ref == 'refs/heads/main'
     needs: smoketest
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.cluster }}
+    environment: ${{ inputs.environment }}
     env:
       ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
       ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
@@ -63,7 +63,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: aks-${{ github.event.inputs.cluster }}
+        working-directory: aks-${{ inputs.environment }}
 
     steps:
       - name: Checkout Repo
@@ -88,11 +88,11 @@ jobs:
         run: terraform validate
 
       - name: Terraform Create Plan
-        if: github.event.inputs.action == 'create'
+        if: inputs.action == 'create'
         run: terraform plan -var-file="terraform.tfvars" -out=tfplan > plan.out
       
       - name: Terraform Destroy Plan
-        if: github.event.inputs.action == 'destroy'
+        if: inputs.action == 'destroy'
         run: terraform plan -destroy -var-file="terraform.tfvars" -out=tfplan > plan.out
 
       - name: Check for Changes
@@ -105,12 +105,12 @@ jobs:
           fi
 
       - name: Terraform Apply
-        if: github.event.inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
+        if: inputs.action == 'create' && steps.changes.outputs.no_changes == 'false'
         run: |
           terraform apply -auto-approve -var-file="terraform.tfvars"
 
       - name: Install or upgrade Ingress NGINX via Helm
-        if: github.event.inputs.action == 'create'
+        if: inputs.action == 'create'
         run: |
           terraform output -raw kubeconfig >./aks-config
           cat ./aks-config
@@ -123,26 +123,26 @@ jobs:
             --set controller.service.externalTrafficPolicy=Local
 
       - name: Terraform Destroy
-        if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
+        if: inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
         run: terraform destroy -auto-approve -var-file="terraform.tfvars"
 
       - name: Authenticate GitHub CLI
         run: gh auth login --with-token <<< "${{ secrets.GH_PAT }}"
 
-      - name: Store Kubeconfig as secret for deploy - ${{ github.event.inputs.cluster }}
-        if: github.event.inputs.action == 'create'
+      - name: Store Kubeconfig as secret for deploy - ${{ inputs.environment }}
+        if: inputs.action == 'create'
         run: |
-          ENV_NAME=${{ github.event.inputs.cluster }}
+          ENV_NAME=${{ inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Setting secret $SECRET_NAME"
           gh secret set "$SECRET_NAME" \
             --repo sianob/bp-deploy \
             --body "$(terraform output -raw kubeconfig)"
         
-      - name: Delete Kubeconfig secret for deploy - ${{ github.event.inputs.cluster }}
-        if: github.event.inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
+      - name: Delete Kubeconfig secret for deploy - ${{ inputs.environment }}
+        if: inputs.action == 'destroy' && steps.changes.outputs.no_changes == 'false'
         run: |
-          ENV_NAME=${{ github.event.inputs.cluster }}
+          ENV_NAME=${{ inputs.environment }}
           SECRET_NAME="KUBECONFIG_${ENV_NAME^^}"  # Bash uppercase
           echo "Deleting secret $SECRET_NAME"
           gh secret delete "$SECRET_NAME" \
